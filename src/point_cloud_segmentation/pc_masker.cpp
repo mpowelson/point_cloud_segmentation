@@ -101,7 +101,7 @@ void PCMasker::newPCCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan)
   }
 
   // This converts the mask into the 64 bit float type that it needs
-  mask.convertTo(mask, CV_64FC1);
+  mask.convertTo(mask, CV_8UC1);
 
   // This duplicates the mask into all 3 channels of the depth image (to a CV_64FC3)
   cv::Mat mask_3channel;
@@ -109,8 +109,9 @@ void PCMasker::newPCCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan)
   cv::merge(in, 3, mask_3channel);
 
   // ---------- Apply mask to the depth image --------------
-  cv::Mat masked_depth_image;
-  applyMask(depth_image, mask_3channel, masked_depth_image);
+  cv::Mat masked_rgb_image;
+//  applyMask(depth_image, mask_3channel, masked_depth_image);
+  applyMask(image, mask_3channel, masked_rgb_image);
 
   if (debug_viewer_)
   {
@@ -119,14 +120,14 @@ void PCMasker::newPCCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& scan)
     ROS_INFO_STREAM(type2str(depth_image.type()));
     ROS_INFO_STREAM(type2str(mask_3channel.type()));
 
-    imshow("window", depth_image);
+    imshow("window", image);
     cv::waitKey(1000);
-    imshow("window", masked_depth_image);
+    imshow("window", masked_rgb_image);
     cv::waitKey(1000);
   }
 
   // Now the masked cv::Mat depth image is converted back into a pcl type to be sent as a msg
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr output = imageToCloud(image, masked_depth_image);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr output = imageToCloud(masked_rgb_image, depth_image);
   output->header = scan->header;
 
   // Publish masked cloud
